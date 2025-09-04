@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Fotos - Manus AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'local_businesses:business_dashboard' %}">Painel do Negócio</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Gerenciar Fotos</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-image me-2"></i>Gerenciar Fotos</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Você tem {{ current_photos }} de {{ max_photos }} fotos permitidas no seu plano.
+                    </p>
+
+                    <div class="progress mb-4">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {% widthratio current_photos max_photos 100 %}%;" 
+                             aria-valuenow="{{ current_photos }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="{{ max_photos }}">
+                            {{ current_photos }}/{{ max_photos }}
+                        </div>
+                    </div>
+
+                    {% if current_photos < max_photos %}
+                        <form method="post" enctype="multipart/form-data" class="mb-4">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="{{ form.image.id_for_label }}" class="form-label">Adicionar Nova Foto</label>
+                                {{ form.image }}
+                                {% if form.image.errors %}
+                                    <div class="text-danger">{{ form.image.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3 form-check">
+                                {{ form.is_primary }}
+                                <label for="{{ form.is_primary.id_for_label }}" class="form-check-label">Foto Principal</label>
+                                {% if form.is_primary.errors %}
+                                    <div class="text-danger">{{ form.is_primary.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-1"></i>Enviar Foto
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            Você atingiu o limite de {{ max_photos }} fotos permitidas no seu plano atual.
+                            <a href="{% url 'local_businesses:manage_plan' %}" class="alert-link">Atualize seu plano</a> para adicionar mais fotos.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if photos %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3><i class="fas fa-images me-2"></i>Fotos Atuais</h3>
+                <div class="row">
+                    {% for photo in photos %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <img src="{{ photo.image.url }}" class="card-img-top" alt="Foto do negócio" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if photo.is_primary %}
+                                            <span class="badge bg-primary">Principal</span>
+                                        {% else %}
+                                            <form method="post" action="{% url 'local_businesses:manage_photos' %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="photo_id" value="{{ photo.id }}">
+                                                <input type="hidden" name="action" value="set_primary">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">Tornar Principal</button>
+                                            </form>
+                                        {% endif %}
+                                        <form method="post" action="{% url 'local_businesses:manage_photos' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="photo_id" value="{{ photo.id }}">
+                                            <input type="hidden" name="action" value="delete">
+                                            <button type="submit" class="btn btn-sm btn-danger" 
+                                                    onclick="return confirm('Tem certeza que deseja excluir esta foto?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

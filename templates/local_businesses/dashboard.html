@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel do Negócio - Manus AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-store me-2"></i>Painel do Negócio</h1>
+            <p class="lead">Gerencie seu comércio ou serviço cadastrado.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Business Info Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações do Negócio</h5>
+                </div>
+                <div class="card-body">
+                    <h5>{{ business.name }}</h5>
+                    <p>{{ business.description|truncatewords:20 }}</p>
+                    <p>
+                        <strong>Tipo:</strong> {{ business.get_business_type_display }}<br>
+                        <strong>Categoria:</strong> {{ business.category.name }}<br>
+                        <strong>Status:</strong> 
+                        <span class="badge bg-{% if business.is_active %}success{% else %}secondary{% endif %}">
+                            {% if business.is_active %}Ativo{% else %}Inativo{% endif %}
+                        </span>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'local_businesses:edit_business' %}" class="btn btn-primary w-100">
+                        <i class="fas fa-edit me-1"></i>Editar Informações
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plan Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-{% if business_plan.plan_type == 'premium' %}warning{% elif business_plan.plan_type == 'pro' %}info{% else %}secondary{% endif %} text-white">
+                    <h5 class="mb-0"><i class="fas fa-crown me-2"></i>Plano Atual</h5>
+                </div>
+                <div class="card-body">
+                    <h5>
+                        {% if business_plan.plan_type == 'free' %}Gratuito
+                        {% elif business_plan.plan_type == 'pro' %}Pro
+                        {% elif business_plan.plan_type == 'premium' %}Premium
+                        {% endif %}
+                    </h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-{% if business_plan.max_photos > 1 %}check{% else %}times{% endif %} me-2"></i>Até {{ business_plan.max_photos }} fotos</li>
+                        <li><i class="fas fa-{% if business_plan.can_show_website %}check{% else %}times{% endif %} me-2"></i>Website e links</li>
+                        <li><i class="fas fa-{% if business_plan.can_show_whatsapp %}check{% else %}times{% endif %} me-2"></i>Botão WhatsApp</li>
+                        <li><i class="fas fa-{% if business_plan.can_show_menu %}check{% else %}times{% endif %} me-2"></i>Cardápio/Menu</li>
+                        <li><i class="fas fa-{% if business_plan.is_featured %}check{% else %}times{% endif %} me-2"></i>Destaque na plataforma</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'local_businesses:manage_plan' %}" class="btn btn-{% if business_plan.plan_type == 'premium' %}warning{% elif business_plan.plan_type == 'pro' %}info{% else %}secondary{% endif %} w-100">
+                        <i class="fas fa-sync-alt me-1"></i>Alterar Plano
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photos Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-images me-2"></i>Fotos</h5>
+                </div>
+                <div class="card-body">
+                    <p>Você tem {{ photo_count }} de {{ business_plan.max_photos }} fotos permitidas.</p>
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {% widthratio photo_count business_plan.max_photos 100 %}%;" 
+                             aria-valuenow="{{ photo_count }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="{{ business_plan.max_photos }}">
+                            {{ photo_count }}/{{ business_plan.max_photos }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'local_businesses:manage_photos' %}" class="btn btn-success w-100">
+                        <i class="fas fa-image me-1"></i>Gerenciar Fotos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Hours Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Horário de Funcionamento</h5>
+                </div>
+                <div class="card-body">
+                    <p>Configure os horários de funcionamento do seu negócio.</p>
+                    {% if business.hours.count > 0 %}
+                        <p class="text-success"><i class="fas fa-check-circle me-1"></i>Horários configurados</p>
+                    {% else %}
+                        <p class="text-warning"><i class="fas fa-exclamation-circle me-1"></i>Horários não configurados</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'local_businesses:manage_hours' %}" class="btn btn-info w-100">
+                        <i class="fas fa-edit me-1"></i>Gerenciar Horários
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="fas fa-star me-2"></i>Avaliações</h5>
+                </div>
+                <div class="card-body">
+                    <p>Gerencie as avaliações dos clientes.</p>
+                    {% if business.reviews.count > 0 %}
+                        <p>
+                            <strong>Média:</strong> 
+                            {% with business.reviews.aggregate(avg='rating__avg').avg as avg_rating %}
+                                {{ avg_rating|floatformat:1 }} 
+                                <i class="fas fa-star text-warning"></i>
+                            {% endwith %}
+                            <br>
+                            <strong>Total:</strong> {{ business.reviews.count }} avaliações
+                        </p>
+                    {% else %}
+                        <p class="text-muted">Nenhuma avaliação ainda.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'local_businesses:business_detail' business.id %}#reviews" class="btn btn-warning w-100">
+                        <i class="fas fa-eye me-1"></i>Ver Avaliações
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bookings Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Reservas</h5>
+                </div>
+                <div class="card-body">
+                    <p>Gerencie as reservas de seus clientes.</p>
+                    {% if recent_bookings %}
+                        <p class="text-success"><i class="fas fa-bell me-1"></i>{{ business.bookings.filter(status='pending').count }} reservas pendentes</p>
+                    {% else %}
+                        <p class="text-muted">Nenhuma reserva recente.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'local_businesses:manage_bookings' %}" class="btn btn-danger w-100 mb-2">
+                        <i class="fas fa-calendar-alt me-1"></i>Gerenciar Reservas
+                    </a>
+                    <a href="{% url 'local_businesses:manage_time_slots' %}" class="btn btn-outline-danger w-100 mb-2">
+                        <i class="fas fa-clock me-1"></i>Horários Disponíveis
+                    </a>
+                    <a href="{% url 'local_businesses:manage_notifications' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-bell me-1"></i>Notificações
+                        {% if business.notifications.filter(is_read=False).count > 0 %}
+                            <span class="badge bg-danger ms-1">{{ business.notifications.filter(is_read=False).count }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Preview Card -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-eye me-2"></i>Visualizar Perfil</h5>
+                </div>
+                <div class="card-body">
+                    <p>Veja como seu negócio aparece para os visitantes.</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'local_businesses:business_detail' business.id %}" class="btn btn-dark w-100">
+                        <i class="fas fa-external-link-alt me-1"></i>Visualizar Perfil
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estatísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5>{{ business.reviews.count }}</h5>
+                            <p class="mb-0">Avaliações</p>
+                        </div>
+                        <div class="col-6">
+                            <h5>{{ business.bookings.count }}</h5>
+                            <p class="mb-0">Reservas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

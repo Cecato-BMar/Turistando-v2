@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Tarefa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-tasks me-2"></i>Detalhes da Tarefa</h4>
+                    <div>
+                        <a href="{% url 'tasks:task_edit' task.id %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <a href="{% url 'tasks:task_delete' task.id %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i> Excluir
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h3>{{ task.title }}</h3>
+                            <p class="text-muted">{{ task.description }}</p>
+                            
+                            <div class="mt-4">
+                                <h6><i class="fas fa-info-circle me-2"></i>Informações</h6>
+                                <ul class="list-group">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Prioridade</span>
+                                        <span class="badge bg-{% if task.priority == 'high' %}danger{% elif task.priority == 'medium' %}warning{% else %}success{% endif %} rounded-pill">
+                                            {{ task.get_priority_display }}
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Status</span>
+                                        <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}primary{% else %}secondary{% endif %} rounded-pill">
+                                            {{ task.get_status_display }}
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Data de Criação</span>
+                                        <span>{{ task.created_at|date:"d/m/Y H:i" }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Data de Vencimento</span>
+                                        <span>{{ task.due_date|date:"d/m/Y" }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Atribuído Para</span>
+                                        <span>{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>Criado Por</span>
+                                        <span>{{ task.created_by.get_full_name|default:task.created_by.username }}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-users me-2"></i>Colaboradores</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if collaborators %}
+                                        <ul class="list-unstyled">
+                                            {% for collaborator in collaborators %}
+                                                <li class="mb-2">
+                                                    <i class="fas fa-user me-2"></i>{{ collaborator.user.get_full_name|default:collaborator.user.username }}
+                                                    <span class="badge bg-secondary float-end">{{ collaborator.get_role_display }}</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="text-muted">Nenhum colaborador adicionado.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-paperclip me-2"></i>Arquivos</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if files %}
+                                        <ul class="list-unstyled">
+                                            {% for file in files %}
+                                                <li class="mb-2">
+                                                    <i class="fas fa-file me-2"></i>
+                                                    <a href="{{ file.file.url }}" target="_blank">{{ file.file.name|truncatechars:30 }}</a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="text-muted">Nenhum arquivo anexado.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'tasks:task_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar
+                        </a>
+                        {% if task.status != 'completed' %}
+                            <a href="{% url 'tasks:task_complete' task.id %}" class="btn btn-success">
+                                <i class="fas fa-check-circle me-1"></i>Marcar como Concluída
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

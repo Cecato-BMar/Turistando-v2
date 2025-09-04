@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Planos e Preços{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-crown me-2"></i>Planos e Preços</h2>
+                <a href="{% url 'billing:billing_home' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Voltar
+                </a>
+            </div>
+            
+            <div class="row">
+                {% if plans %}
+                    {% for plan in plans %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 shadow-sm {% if plan.is_popular %}border-primary border-2{% endif %}">
+                                {% if plan.is_popular %}
+                                    <div class="card-header bg-primary text-white text-center">
+                                        <strong>Mais Popular</strong>
+                                    </div>
+                                {% endif %}
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ plan.name }}</h5>
+                                    <p class="card-text">{{ plan.description }}</p>
+                                    
+                                    <div class="mt-auto">
+                                        <div class="text-center mb-3">
+                                            <h3 class="display-5">R$ {{ plan.price|floatformat:2 }}</h3>
+                                            <small class="text-muted">por mês</small>
+                                        </div>
+                                        
+                                        <ul class="list-unstyled">
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                {{ plan.credit_limit|default:"Ilimitado" }} créditos mensais
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                {{ plan.max_projects }} projetos
+                                            </li>
+                                            <li class="mb-2">
+                                                <i class="fas fa-check text-success me-2"></i>
+                                                {{ plan.max_team_members }} membros na equipe
+                                            </li>
+                                            {% if plan.advanced_analytics %}
+                                                <li class="mb-2">
+                                                    <i class="fas fa-check text-success me-2"></i>
+                                                    Analytics avançado
+                                                </li>
+                                            {% endif %}
+                                            {% if plan.priority_support %}
+                                                <li class="mb-2">
+                                                    <i class="fas fa-check text-success me-2"></i>
+                                                    Suporte prioritário
+                                                </li>
+                                            {% endif %}
+                                            {% if plan.custom_integrations %}
+                                                <li class="mb-2">
+                                                    <i class="fas fa-check text-success me-2"></i>
+                                                    Integrações personalizadas
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                        
+                                        {% if user_subscription and user_subscription.plan.id == plan.id %}
+                                            <button class="btn btn-success w-100" disabled>
+                                                <i class="fas fa-check-circle me-1"></i>Plano Atual
+                                            </button>
+                                        {% else %}
+                                            <button class="btn btn-{% if plan.is_popular %}primary{% else %}outline-primary{% endif %} w-100 plan-select-btn" 
+                                                    data-plan-id="{{ plan.id }}" 
+                                                    data-plan-name="{{ plan.name }}">
+                                                {% if user_subscription %}
+                                                    <i class="fas fa-sync-alt me-1"></i>Alterar para {{ plan.name }}
+                                                {% else %}
+                                                    <i class="fas fa-crown me-1"></i>Escolher {{ plan.name }}
+                                                {% endif %}
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-crown fa-3x text-muted mb-3"></i>
+                            <h4>Nenhum plano disponível</h4>
+                            <p class="text-muted">Não há planos cadastrados no momento.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmação de plano -->
+<div class="modal fade" id="planConfirmationModal" tabindex="-1" aria-labelledby="planConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="planConfirmationModalLabel">Confirmar Plano</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Você está prestes a selecionar o plano <strong id="selectedPlanName"></strong>.</p>
+                <p>Tem certeza que deseja continuar?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmPlanBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedPlanId = null;
+
+document.querySelectorAll('.plan-select-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        selectedPlanId = this.getAttribute('data-plan-id');
+        const planName = this.getAttribute('data-plan-name');
+        
+        document.getElementById('selectedPlanName').textContent = planName;
+        
+        var modal = new bootstrap.Modal(document.getElementById('planConfirmationModal'));
+        modal.show();
+    });
+});
+
+document.getElementById('confirmPlanBtn').addEventListener('click', function() {
+    if (selectedPlanId) {
+        // Aqui você implementaria a lógica para selecionar o plano
+        // Por enquanto, apenas fechamos o modal
+        var modal = bootstrap.Modal.getInstance(document.getElementById('planConfirmationModal'));
+        modal.hide();
+        
+        // Mostrar mensagem de sucesso
+        alert('Plano selecionado com sucesso!');
+        
+        // Recarregar a página para refletir as mudanças
+        location.reload();
+    }
+});
+</script>
+{% endblock %}

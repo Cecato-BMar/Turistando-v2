@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Comunidade{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users me-2"></i>Comunidade</h2>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'community:use_cases' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-lightbulb me-1"></i>Casos de Uso
+                    </a>
+                    <a href="{% url 'community:events' %}" class="btn btn-outline-success">
+                        <i class="fas fa-calendar-alt me-1"></i>Eventos
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0"><i class="fas fa-comments me-2"></i>Publicações Recentes</h4>
+                        </div>
+                        <div class="card-body">
+                            {% if posts %}
+                                {% for post in posts %}
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <h5 class="card-title">{{ post.title }}</h5>
+                                                <span class="text-muted">{{ post.created_at|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                            <p class="card-text">{{ post.content|truncatewords:30 }}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-user me-1"></i>{{ post.author.get_full_name|default:post.author.username }}
+                                                </small>
+                                                <a href="{% url 'community:post_detail' post.id %}" class="btn btn-sm btn-primary">
+                                                    Ler mais
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                
+                                {% if is_paginated %}
+                                    <nav aria-label="Navegação de página">
+                                        <ul class="pagination justify-content-center">
+                                            {% if page_obj.has_previous %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=1">&laquo; Primeira</a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                                </li>
+                                            {% endif %}
+                                            
+                                            <li class="page-item active">
+                                                <span class="page-link">
+                                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                                </span>
+                                            </li>
+                                            
+                                            {% if page_obj.has_next %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </nav>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                                    <h4>Nenhuma publicação encontrada</h4>
+                                    <p class="text-muted">Ainda não há publicações na comunidade.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h4 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Casos de Uso em Destaque</h4>
+                        </div>
+                        <div class="card-body">
+                            {% if use_cases %}
+                                {% for use_case in use_cases %}
+                                    <div class="mb-3">
+                                        <h6>{{ use_case.title }}</h6>
+                                        <p class="text-muted">{{ use_case.description|truncatewords:15 }}</p>
+                                        <a href="{% url 'community:use_case_detail' use_case.id %}" class="btn btn-sm btn-outline-info">
+                                            Ver Detalhes
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">Nenhum caso de uso destacado.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h4 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Próximos Eventos</h4>
+                        </div>
+                        <div class="card-body">
+                            {% if events %}
+                                {% for event in events %}
+                                    <div class="mb-3">
+                                        <h6>{{ event.title }}</h6>
+                                        <p class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>{{ event.date|date:"d/m/Y H:i" }}
+                                        </p>
+                                        <a href="{% url 'community:event_detail' event.id %}" class="btn btn-sm btn-outline-success">
+                                            Ver Detalhes
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">Nenhum evento programado.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

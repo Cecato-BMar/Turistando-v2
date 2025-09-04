@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Tasks - Manus AI{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Tasks</h2>
+    <a href="{% url 'tasks:create_task' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Create Task
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        {% if tasks %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in tasks %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'tasks:task_detail' task.id %}">{{ task.title }}</a>
+                                        </td>
+                                        <td>{{ task.description|truncatewords:10 }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'failed' %}danger{% elif task.status == 'in_progress' %}warning{% else %}secondary{% endif %}">
+                                                {{ task.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if task.priority == 'high' %}danger{% elif task.priority == 'medium' %}warning{% else %}secondary{% endif %}">
+                                                {{ task.get_priority_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ task.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'tasks:task_detail' task.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                            <a href="{% url 'tasks:delete_task' task.id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-clipboard-check" style="font-size: 3rem; color: #6c757d;"></i>
+                <h3 class="mt-3">No tasks yet</h3>
+                <p class="text-muted">Create your first task to get started with Manus AI.</p>
+                <a href="{% url 'tasks:create_task' %}" class="btn btn-primary">Create Task</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

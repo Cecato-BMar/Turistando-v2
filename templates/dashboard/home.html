@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Início - Manus AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="jumbotron bg-primary text-white rounded-3 p-5">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 class="display-4 fw-bold">Descubra Comércios e Serviços Locais</h1>
+                        <p class="lead">Conectamos turistas com os melhores estabelecimentos da região. Encontre restaurantes, lojas, passeios e muito mais!</p>
+                        <a href="{% url 'local_businesses:nearby_businesses' %}" class="btn btn-light btn-lg">
+                            <i class="fas fa-compass me-2"></i>Explorar Próximos
+                        </a>
+                    </div>
+                    <div class="col-lg-4 d-none d-lg-block text-center">
+                        <i class="fas fa-map-marked-alt fa-8x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4"><i class="fas fa-search me-2"></i>Buscar Comércios e Serviços</h3>
+                    <form method="GET" action="{% url 'local_businesses:business_list' %}">
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <input type="text" class="form-control form-control-lg" name="q" placeholder="O que você procura?">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control form-control-lg" name="location" placeholder="Localização">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Businesses -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="fas fa-star me-2"></i>Destaque da Semana</h2>
+            <div class="row">
+                {% if featured_businesses %}
+                    {% for business in featured_businesses %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                {% if business.photos.first %}
+                                    <img src="{{ business.photos.first.image.url }}" class="card-img-top" alt="{{ business.name }}" style="height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-store fa-3x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ business.name }}</h5>
+                                    <p class="card-text">{{ business.description|truncatewords:15 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ business.category.name }}
+                                        </small>
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-star me-1"></i>{{ business.avg_rating|floatformat:1 }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="{% url 'local_businesses:business_detail' business.id %}" class="btn btn-primary w-100">
+                                        <i class="fas fa-info-circle me-1"></i>Ver Detalhes
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-store-slash fa-3x text-muted mb-3"></i>
+                            <h4>Nenhum comércio em destaque</h4>
+                            <p class="text-muted">Ainda não há comércios cadastrados.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Nearby Businesses -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="fas fa-compass me-2"></i>Próximos a Você</h2>
+            <div class="row">
+                {% if nearby_businesses %}
+                    {% for business in nearby_businesses %}
+                        <div class="col-md-4 col-6 mb-3">
+                            <div class="card h-100">
+                                {% if business.photos.first %}
+                                    <img src="{{ business.photos.first.image.url }}" class="card-img-top" alt="{{ business.name }}" style="height: 120px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 120px;">
+                                        <i class="fas fa-store fa-2x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="card-body p-2">
+                                    <h6 class="card-title mb-1">{{ business.name }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ business.category.name }}
+                                    </small>
+                                    <div class="mt-1">
+                                        <small class="text-muted">
+                                            <i class="fas fa-star text-warning me-1"></i>
+                                            {% if business.avg_rating %}
+                                                {{ business.avg_rating|floatformat:1 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <p class="text-muted">Nenhum comércio próximo cadastrado.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="text-center mt-3">
+                <a href="{% url 'local_businesses:nearby_businesses' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-search-plus me-1"></i>Ver Todos os Próximos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="fas fa-tags me-2"></i>Categorias</h2>
+            <div class="row">
+                {% if categories %}
+                    {% for category in categories %}
+                        <div class="col-md-3 col-6 mb-3">
+                            <a href="{% url 'local_businesses:business_list' %}?category={{ category.id }}" class="text-decoration-none">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <i class="fas {{ category.icon|default:'fa-question-circle' }} fa-2x text-primary mb-2"></i>
+                                        <h6 class="card-title">{{ category.name }}</h6>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <p class="text-muted">Nenhuma categoria cadastrada.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-success text-white rounded-3">
+                <div class="card-body text-center">
+                    <h3 class="card-title"><i class="fas fa-bullhorn me-2"></i>É dono de um comércio ou prestador de serviços?</h3>
+                    <p class="card-text lead">Cadastre seu negócio na nossa plataforma e alcance mais turistas!</p>
+                    {% if user.is_authenticated %}
+                        {% if user.business %}
+                            <a href="{% url 'local_businesses:business_dashboard' %}" class="btn btn-light btn-lg">
+                                <i class="fas fa-tachometer-alt me-1"></i>Ir para o Painel
+                            </a>
+                        {% else %}
+                            <a href="{% url 'local_businesses:register_business' %}" class="btn btn-light btn-lg">
+                                <i class="fas fa-plus-circle me-1"></i>Cadastrar Negócio
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'accounts:register' %}" class="btn btn-light btn-lg">
+                            <i class="fas fa-user-plus me-1"></i>Cadastrar Agora
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

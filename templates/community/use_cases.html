@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Casos de Uso{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-lightbulb me-2"></i>Casos de Uso</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitUseCaseModal">
+                    <i class="fas fa-plus-circle me-1"></i>Enviar Caso de Uso
+                </button>
+            </div>
+            
+            <div class="row">
+                {% if use_cases %}
+                    {% for use_case in use_cases %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ use_case.title }}</h5>
+                                    <p class="card-text">{{ use_case.description|truncatewords:20 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>{{ use_case.submitted_by.get_full_name|default:use_case.submitted_by.username }}
+                                        </small>
+                                        <a href="{% url 'community:use_case_detail' use_case.id %}" class="btn btn-sm btn-outline-primary">
+                                            Ver Detalhes
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-footer text-muted">
+                                    <small>
+                                        <i class="fas fa-calendar me-1"></i>{{ use_case.created_at|date:"d/m/Y" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    {% if is_paginated %}
+                        <nav aria-label="Navegação de página">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">&laquo; Primeira</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
+                            <h4>Nenhum caso de uso encontrado</h4>
+                            <p class="text-muted">Ainda não há casos de uso compartilhados na comunidade.</p>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitUseCaseModal">
+                                <i class="fas fa-plus-circle me-1"></i>Seja o primeiro a enviar
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para submeter caso de uso -->
+<div class="modal fade" id="submitUseCaseModal" tabindex="-1" aria-labelledby="submitUseCaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="submitUseCaseModalLabel">Enviar Caso de Uso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="useCaseForm">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Título</label>
+                        <input type="text" class="form-control" id="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="description" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="industry" class="form-label">Indústria</label>
+                        <input type="text" class="form-control" id="industry">
+                    </div>
+                    <div class="mb-3">
+                        <label for="company_size" class="form-label">Tamanho da Empresa</label>
+                        <select class="form-select" id="company_size">
+                            <option value="">Selecione...</option>
+                            <option value="small">Pequena (1-50 funcionários)</option>
+                            <option value="medium">Média (51-500 funcionários)</option>
+                            <option value="large">Grande (500+ funcionários)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="submitUseCaseBtn">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('submitUseCaseBtn').addEventListener('click', function() {
+    // Aqui você implementaria a lógica para enviar o caso de uso
+    // Por enquanto, apenas fechamos o modal
+    var modal = bootstrap.Modal.getInstance(document.getElementById('submitUseCaseModal'));
+    modal.hide();
+    
+    // Mostrar mensagem de sucesso
+    alert('Caso de uso enviado com sucesso! Aguarde aprovação.');
+});
+</script>
+{% endblock %}

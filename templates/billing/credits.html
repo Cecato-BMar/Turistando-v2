@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Histórico de Créditos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-coins me-2"></i>Histórico de Créditos</h2>
+                <a href="{% url 'billing:billing_home' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Voltar
+                </a>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Saldo Atual</h5>
+                            <h2 class="display-4 text-primary">{{ user_profile.credit_balance }}</h2>
+                            <p class="text-muted">créditos disponíveis</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Créditos Usados</h5>
+                            <h2 class="display-4 text-warning">{{ user_profile.credit_balance_used }}</h2>
+                            <p class="text-muted">este mês</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Limite Mensal</h5>
+                            <h2 class="display-4 text-success">
+                                {% if user_profile.monthly_credit_limit %}
+                                    {{ user_profile.monthly_credit_limit }}
+                                {% else %}
+                                    ∞
+                                {% endif %}
+                            </h2>
+                            <p class="text-muted">
+                                {% if user_profile.monthly_credit_limit %}
+                                    créditos
+                                {% else %}
+                                    ilimitado
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-history me-2"></i>Transações de Créditos</h4>
+                </div>
+                <div class="card-body">
+                    {% if transactions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Tipo</th>
+                                        <th>Quantidade</th>
+                                        <th>Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transaction in transactions %}
+                                        <tr>
+                                            <td>{{ transaction.created_at|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ transaction.description }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if transaction.transaction_type == 'credit' %}success{% elif transaction.transaction_type == 'debit' %}danger{% else %}secondary{% endif %}">
+                                                    {{ transaction.get_transaction_type_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if transaction.transaction_type == 'credit' %}+{% elif transaction.transaction_type == 'debit' %}-{% endif %}
+                                                {{ transaction.amount|floatformat:0 }}
+                                            </td>
+                                            <td>{{ transaction.balance_after|floatformat:0 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {% if is_paginated %}
+                            <nav aria-label="Navegação de página">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1">&laquo; Primeira</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        </span>
+                                    </li>
+                                    
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
+                            <h4>Nenhuma transação encontrada</h4>
+                            <p class="text-muted">Você ainda não tem transações de créditos.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

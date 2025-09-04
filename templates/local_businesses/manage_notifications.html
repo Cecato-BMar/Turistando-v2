@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Notificações - {{ business.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'local_businesses:business_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Gerenciar Notificações</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-bell me-2"></i>Notificações</h1>
+                {% if notifications.filter(is_read=False).count > 0 %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="mark_all_as_read">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="fas fa-check-double me-1"></i>Marcar Todas como Lidas
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if notifications %}
+                        <div class="list-group">
+                            {% for notification in notifications %}
+                                <div class="list-group-item {% if not notification.is_read %}bg-light{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="mb-1">
+                                                {{ notification.title }}
+                                                {% if not notification.is_read %}
+                                                    <span class="badge bg-primary">Nova</span>
+                                                {% endif %}
+                                            </h5>
+                                            <p class="mb-1">{{ notification.message }}</p>
+                                            <small class="text-muted">
+                                                {{ notification.created_at|date:"d/m/Y H:i" }} • 
+                                                {% if notification.notification_type == 'booking' %}
+                                                    <i class="fas fa-calendar-check me-1"></i>Reserva
+                                                {% elif notification.notification_type == 'booking_update' %}
+                                                    <i class="fas fa-sync-alt me-1"></i>Atualização de Reserva
+                                                {% elif notification.notification_type == 'review' %}
+                                                    <i class="fas fa-star me-1"></i>Avaliação
+                                                {% else %}
+                                                    <i class="fas fa-info-circle me-1"></i>Geral
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="mark_as_read">
+                                                <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                                                {% if not notification.is_read %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary me-1" title="Marcar como lida">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </form>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir esta notificação?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <h5>Nenhuma notificação</h5>
+                            <p class="text-muted">Você não tem notificações no momento.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

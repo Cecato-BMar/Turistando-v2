@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Reservar Serviço - {{ business.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'local_businesses:business_list' %}">Comércios</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'local_businesses:business_detail' business.id %}">{{ business.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Reservar Serviço</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Reservar Serviço em {{ business.name }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="bookingForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.service_name.id_for_label }}" class="form-label">Serviço *</label>
+                            {{ form.service_name }}
+                            {% if form.service_name.errors %}
+                                <div class="text-danger">{{ form.service_name.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">Informe qual serviço você deseja reservar</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.booking_date.id_for_label }}" class="form-label">Data *</label>
+                                    {{ form.booking_date }}
+                                    {% if form.booking_date.errors %}
+                                        <div class="text-danger">{{ form.booking_date.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.booking_time.id_for_label }}" class="form-label">Horário *</label>
+                                    {{ form.booking_time }}
+                                    {% if form.booking_time.errors %}
+                                        <div class="text-danger">{{ form.booking_time.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Horários disponíveis podem variar conforme a data</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.duration.id_for_label }}" class="form-label">Duração (minutos)</label>
+                                    {{ form.duration }}
+                                    {% if form.duration.errors %}
+                                        <div class="text-danger">{{ form.duration.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.number_of_people.id_for_label }}" class="form-label">Número de Pessoas</label>
+                                    {{ form.number_of_people }}
+                                    {% if form.number_of_people.errors %}
+                                        <div class="text-danger">{{ form.number_of_people.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.special_requests.id_for_label }}" class="form-label">Solicitações Especiais</label>
+                            {{ form.special_requests }}
+                            {% if form.special_requests.errors %}
+                                <div class="text-danger">{{ form.special_requests.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">Informe qualquer necessidade especial ou preferência</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'local_businesses:business_detail' business.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Solicitar Reserva
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações do Estabelecimento</h5>
+                </div>
+                <div class="card-body">
+                    <h5>{{ business.name }}</h5>
+                    <p>{{ business.description|truncatewords:20 }}</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i>{{ business.address }}</li>
+                        {% if business.phone %}
+                            <li class="mb-2"><i class="fas fa-phone me-2"></i>{{ business.phone }}</li>
+                        {% endif %}
+                        {% if business.email %}
+                            <li class="mb-2"><i class="fas fa-envelope me-2"></i>{{ business.email }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Importante</h5>
+                </div>
+                <div class="card-body">
+                    <p>Sua reserva estará sujeita à confirmação pelo estabelecimento. Você receberá uma notificação assim que a reserva for confirmada.</p>
+                    <p>Lembre-se de comparecer no horário marcado.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('id_booking_date').addEventListener('change', function() {
+    const date = this.value;
+    const businessId = {{ business.id }};
+    
+    if (date) {
+        fetch(`/businesses/api/available-times/${businessId}/${date}/`)
+            .then(response => response.json())
+            .then(data => {
+                const timeSelect = document.getElementById('id_booking_time');
+                timeSelect.innerHTML = '';
+                
+                data.available_times.forEach(time => {
+                    const option = document.createElement('option');
+                    option.value = time;
+                    option.textContent = time;
+                    timeSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching available times:', error));
+    }
+});
+</script>
+{% endblock %}

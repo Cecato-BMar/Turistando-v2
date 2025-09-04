@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Tarefas Agendadas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clock me-2"></i>Tarefas Agendadas</h2>
+                <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-1"></i>Nova Tarefa
+                </a>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Lista de Tarefas Agendadas</h4>
+                </div>
+                <div class="card-body">
+                    {% if scheduled_tasks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Descrição</th>
+                                        <th>Frequência</th>
+                                        <th>Próxima Execução</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for task in scheduled_tasks %}
+                                        <tr>
+                                            <td>{{ task.title }}</td>
+                                            <td>{{ task.description|truncatewords:10 }}</td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    {{ task.get_frequency_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ task.next_run|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{% url 'tasks:scheduled_task_detail' task.id %}" 
+                                                       class="btn btn-sm btn-outline-primary" 
+                                                       title="Ver Detalhes">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{% url 'tasks:scheduled_task_edit' task.id %}" 
+                                                       class="btn btn-sm btn-outline-warning" 
+                                                       title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'tasks:scheduled_task_delete' task.id %}" 
+                                                       class="btn btn-sm btn-outline-danger" 
+                                                       title="Excluir">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {% if is_paginated %}
+                            <nav aria-label="Navegação de página">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1">&laquo; Primeira</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                        </span>
+                                    </li>
+                                    
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h4>Nenhuma tarefa agendada encontrada</h4>
+                            <p class="text-muted">Você ainda não criou nenhuma tarefa agendada.</p>
+                            <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-1"></i>Criar Tarefa Agendada
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

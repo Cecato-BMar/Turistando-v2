@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if nearby %}Comércios Próximos{% else %}Todos os Comércios{% endif %} - Manus AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    #map-container { height: 400px; width: 100%; }
+    .business-marker { cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>
+                {% if nearby %}
+                    <i class="fas fa-compass me-2"></i>Comércios e Serviços Próximos
+                {% else %}
+                    <i class="fas fa-store me-2"></i>Todos os Comércios e Serviços
+                {% endif %}
+            </h1>
+            <p class="lead">Encontre os melhores estabelecimentos da região.</p>
+        </div>
+    </div>
+    
+    {% if nearby and user_lat and user_lng %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-map me-2"></i>Mapa dos Comércios Próximos</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="map-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="q" value="{{ request.GET.q }}" placeholder="Nome, descrição...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="category" class="form-label">Categoria</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Todas</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ cat.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="type" class="form-label">Tipo</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="">Todos</option>
+                                <option value="commerce" {% if request.GET.type == 'commerce' %}selected{% endif %}>Comércio</option>
+                                <option value="service" {% if request.GET.type == 'service' %}selected{% endif %}>Serviço</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-1"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business List -->
+    <div class="row">
+        <div class="col-12">
+            {% if businesses %}
+                <div class="row">
+                    {% for business in businesses %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                {% if business.photos.first %}
+                                    <img src="{{ business.photos.first.image.url }}" class="card-img-top" alt="{{ business.name }}" style="height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-store fa-3x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title">{{ business.name }}</h5>
+                                        {% if business.businessplan.plan_type == 'premium' %}
+                                            <span class="badge bg-warning" title="Destaque">
+                                                <i class="fas fa-crown"></i>
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="card-text">{{ business.description|truncatewords:15 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ business.category.name }}
+                                        </small>
+                                        <span class="badge bg-{% if business.business_type == 'commerce' %}primary{% else %}success{% endif %}">
+                                            {{ business.get_business_type_display }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-star text-warning me-1"></i>
+                                            {% if business.avg_rating %}
+                                                {{ business.avg_rating|floatformat:1 }}
+                                            {% else %}
+                                                Sem avaliações
+                                            {% endif %}
+                                        </small>
+                                        {% if business.businessplan.can_show_whatsapp and business.whatsapp %}
+                                            <a href="https://wa.me/{{ business.whatsapp }}" target="_blank" class="btn btn-success btn-sm">
+                                                <i class="fab fa-whatsapp"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="{% url 'local_businesses:business_detail' business.id %}" class="btn btn-primary w-100">
+                                        <i class="fas fa-info-circle me-1"></i>Ver Detalhes
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination would go here if needed -->
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-store-slash fa-3x text-muted mb-3"></i>
+                    <h4>Nenhum comércio encontrado</h4>
+                    <p class="text-muted">Tente ajustar seus filtros de busca.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+{% if nearby and user_lat and user_lng %}
+<script>
+// Initialize and display a Google Map
+function initMap() {
+    // Create a map object and specify the DOM element for display
+    var map = new google.maps.Map(document.getElementById('map-container'), {
+        center: {lat: parseFloat('{{ user_lat }}'), lng: parseFloat('{{ user_lng }}')},
+        zoom: 14
+    });
+
+    // Add user location marker
+    var userMarker = new google.maps.Marker({
+        position: {lat: parseFloat('{{ user_lat }}'), lng: parseFloat('{{ user_lng }}')},
+        map: map,
+        title: 'Sua Localização',
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: '#4285F4',
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 2
+        }
+    });
+
+    // Add business markers
+    var businesses = [
+        {% for business in businesses %}
+            {% if business.latitude and business.longitude %}
+                {
+                    id: {{ business.id }},
+                    name: '{{ business.name|escapejs }}',
+                    lat: {{ business.latitude|unlocalize }},
+                    lng: {{ business.longitude|unlocalize }},
+                    address: '{{ business.address|escapejs }}',
+                    rating: {% if business.avg_rating %}{{ business.avg_rating|floatformat:1 }}{% else %}null{% endif %}
+                },
+            {% endif %}
+        {% endfor %}
+    ];
+
+    businesses.forEach(function(business) {
+        var marker = new google.maps.Marker({
+            position: {lat: business.lat, lng: business.lng},
+            map: map,
+            title: business.name
+        });
+
+        // Add info window
+        var infoWindow = new google.maps.InfoWindow({
+            content: '<div><strong>' + business.name + '</strong><br>' +
+                     business.address + '<br>' +
+                     (business.rating ? 'Avaliação: ' + business.rating + ' <i class="fas fa-star text-warning"></i>' : 'Sem avaliações') + '<br>' +
+                     '<a href="/local_businesses/business/' + business.id + '/" class="btn btn-primary btn-sm mt-2">Ver Detalhes</a></div>'
+        });
+
+        marker.addListener('click', function() {
+            infoWindow.open(map, marker);
+        });
+    });
+}
+
+// Load the Google Maps API asynchronously
+function loadGoogleMaps() {
+    var script = document.createElement('script');
+    script.src = 'https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+}
+
+// Load the map when the page loads
+window.onload = function() {
+    loadGoogleMaps();
+};
+</script>
+{% endif %}
+{% endblock %}

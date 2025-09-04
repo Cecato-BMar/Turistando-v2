@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Plano - Manus AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'local_businesses:business_dashboard' %}">Painel do Negócio</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Gerenciar Plano</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-crown me-2"></i>Gerenciar Plano</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-{% if business_plan.plan_type == 'free' %}secondary{% elif business_plan.plan_type == 'pro' %}info{% else %}warning{% endif %}">
+                                <div class="card-header bg-{% if business_plan.plan_type == 'free' %}secondary{% elif business_plan.plan_type == 'pro' %}info{% else %}warning{% endif %} text-white">
+                                    <h5 class="mb-0 text-center">Gratuito</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>1 Foto</li>
+                                        <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Website</li>
+                                        <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>WhatsApp</li>
+                                        <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Cardápio</li>
+                                        <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Destaque</li>
+                                    </ul>
+                                </div>
+                                <div class="card-footer">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="plan_type" value="free">
+                                        <button type="submit" class="btn btn-{% if business_plan.plan_type == 'free' %}secondary disabled{% else %}outline-secondary{% endif %} w-100">
+                                            {% if business_plan.plan_type == 'free' %}
+                                                <i class="fas fa-check-circle me-1"></i>Plano Atual
+                                            {% else %}
+                                                Selecionar Plano
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-{% if business_plan.plan_type == 'pro' %}info{% else %}secondary{% endif %}">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0 text-center">Pro</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>5 Fotos</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Website</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>WhatsApp</li>
+                                        <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Cardápio</li>
+                                        <li class="mb-2"><i class="fas fa-times text-danger me-2"></i>Destaque</li>
+                                    </ul>
+                                </div>
+                                <div class="card-footer">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="plan_type" value="pro">
+                                        <button type="submit" class="btn btn-{% if business_plan.plan_type == 'pro' %}info disabled{% else %}outline-info{% endif %} w-100">
+                                            {% if business_plan.plan_type == 'pro' %}
+                                                <i class="fas fa-check-circle me-1"></i>Plano Atual
+                                            {% else %}
+                                                Selecionar Plano
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-{% if business_plan.plan_type == 'premium' %}warning{% else %}secondary{% endif %}">
+                                <div class="card-header bg-warning text-white">
+                                    <h5 class="mb-0 text-center">Premium</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>10 Fotos</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Website</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>WhatsApp</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Cardápio</li>
+                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Destaque</li>
+                                    </ul>
+                                </div>
+                                <div class="card-footer">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="plan_type" value="premium">
+                                        <button type="submit" class="btn btn-{% if business_plan.plan_type == 'premium' %}warning disabled{% else %}outline-warning{% endif %} w-100">
+                                            {% if business_plan.plan_type == 'premium' %}
+                                                <i class="fas fa-check-circle me-1"></i>Plano Atual
+                                            {% else %}
+                                                Selecionar Plano
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <h5><i class="fas fa-info-circle me-2"></i>Benefícios dos Planos</h5>
+                        <ul>
+                            <li><strong>Fotos:</strong> Mostre seu negócio com várias imagens</li>
+                            <li><strong>Website:</strong> Inclua o link do seu site</li>
+                            <li><strong>WhatsApp:</strong> Botão direto para conversar</li>
+                            <li><strong>Cardápio:</strong> Exiba seu cardápio/menu (Premium)</li>
+                            <li><strong>Destaque:</strong> Apareça em primeiro nas buscas (Premium)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
