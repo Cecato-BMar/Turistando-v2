@@ -183,8 +183,8 @@ function initMap() {
                 {
                     id: {{ business.id }},
                     name: '{{ business.name|escapejs }}',
-                    lat: {{ business.latitude|unlocalize }},
-                    lng: {{ business.longitude|unlocalize }},
+                    lat: {{ business.latitude }},
+                    lng: {{ business.longitude }},
                     address: '{{ business.address|escapejs }}',
                     rating: {% if business.avg_rating %}{{ business.avg_rating|floatformat:1 }}{% else %}null{% endif %}
                 },

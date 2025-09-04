@@ -240,14 +240,14 @@
 function initMap() {
     // Create a map object and specify the DOM element for display
     var map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: {{ business.latitude|unlocalize }}, lng: {{ business.longitude|unlocalize }}},
+        center: {lat: {{ business.latitude }}, lng: {{ business.longitude }}},
         zoom: 15
     });
 
     // Create a marker and set its position
     var marker = new google.maps.Marker({
         map: map,
-        position: {lat: {{ business.latitude|unlocalize }}, lng: {{ business.longitude|unlocalize }}},
+        position: {lat: {{ business.latitude }}, lng: {{ business.longitude }}},
         title: '{{ business.name|escapejs }}'
     });
 }

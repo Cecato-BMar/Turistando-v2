@@ -52,6 +52,11 @@
                                 <li><a class="dropdown-item" href="{% url 'dashboard:home' %}"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a></li>
                                 {% if user.business %}
                                     <li><a class="dropdown-item" href="{% url 'local_businesses:business_dashboard' %}"><i class="fas fa-store me-1"></i>Meu Negócio</a></li>
+                                {% if unread_notifications > 0 %}
+                                    <li><a class="dropdown-item" href="{% url 'local_businesses:manage_notifications' %}"><i class="fas fa-bell me-1"></i>Notificações <span class="badge bg-danger">{{ unread_notifications }}</span></a></li>
+                                {% else %}
+                                    <li><a class="dropdown-item" href="{% url 'local_businesses:manage_notifications' %}"><i class="fas fa-bell me-1"></i>Notificações</a></li>
+                                {% endif %}
                                 {% else %}
                                     <li><a class="dropdown-item" href="{% url 'local_businesses:register_business' %}"><i class="fas fa-plus-circle me-1"></i>Cadastrar Negócio</a></li>
                                 {% endif %}

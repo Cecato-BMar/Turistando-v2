@@ -346,7 +346,7 @@ def add_review(request, business_id):
                     user=request.user,
                     notification_type='review',
                     title=f'Nova avaliação de {request.user.get_full_name() or request.user.username}',
-                    message=f'{request.user.get_full_name() or request.user.username} deixou uma avaliação de {review.rating} estrelas."
+                    message=f'{request.user.get_full_name() or request.user.username} deixou uma avaliação de {review.rating} estrelas.'
                 )
                 messages.success(request, 'Avaliação adicionada com sucesso!')
             
@@ -418,7 +418,7 @@ def manage_bookings(request):
                 user=request.user,
                 notification_type='booking_update',
                 title=f'Reserva confirmada: {booking.service_name}',
-                message=f'Sua reserva para {booking.service_name} no dia {booking.booking_date} às {booking.booking_time} foi confirmada."
+                message=f'Sua reserva para {booking.service_name} no dia {booking.booking_date} às {booking.booking_time} foi confirmada.'
             )
             messages.success(request, f'Reserva para {booking.user.get_full_name() or booking.user.username} confirmada!')
         elif action == 'cancel':
@@ -429,7 +429,7 @@ def manage_bookings(request):
                 user=request.user,
                 notification_type='booking_update',
                 title=f'Reserva cancelada: {booking.service_name}',
-                message=f'Sua reserva para {booking.service_name} no dia {booking.booking_date} às {booking.booking_time} foi cancelada."
+                message=f'Sua reserva para {booking.service_name} no dia {booking.booking_date} às {booking.booking_time} foi cancelada.'
             )
             messages.info(request, f'Reserva para {booking.user.get_full_name() or booking.user.username} cancelada.')
         elif action == 'complete':
@@ -440,7 +440,7 @@ def manage_bookings(request):
                 user=request.user,
                 notification_type='booking_update',
                 title=f'Reserva concluída: {booking.service_name}',
-                message=f'Sua reserva para {booking.service_name} no dia {booking.booking_date} às {booking.booking_time} foi concluída. Obrigado!"
+                message=f'Sua reserva para {booking.service_name} no dia {booking.booking_date} às {booking.booking_time} foi concluída. Obrigado!'
             )
             messages.success(request, f'Reserva para {booking.user.get_full_name() or booking.user.username} marcada como concluída.')
         
