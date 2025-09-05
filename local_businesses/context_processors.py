@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth.models import User
+
 
 def google_maps_api_key(request):
     """Make Google Maps API key available in all templates"""
@@ -9,11 +9,15 @@ def google_maps_api_key(request):
 
 def notifications(request):
     """Make notifications available in all templates"""
-    if request.user.is_authenticated:
+    if hasattr(request, 'user') and request.user.is_authenticated:
         # Get notifications for business owners
         try:
-            if hasattr(request.user, 'business'):
-                unread_notifications = request.user.business.notifications.filter(is_read=False).count()
+            # Agora um usuário pode ter múltiplos negócios
+            if hasattr(request.user, 'businesses'):
+                # Contar notificações de todos os negócios do usuário
+                unread_notifications = 0
+                for business in request.user.businesses.all():
+                    unread_notifications += business.notifications.filter(is_read=False).count()
                 return {'unread_notifications': unread_notifications}
         except:
             pass

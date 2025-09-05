@@ -7,12 +7,63 @@
     <div class="row mb-4">
         <div class="col-12">
             <h1><i class="fas fa-store me-2"></i>Painel do Negócio</h1>
-            <p class="lead">Gerencie seu comércio ou serviço cadastrado.</p>
+            <p class="lead">Gerencie seus comércios ou serviços cadastrados.</p>
         </div>
     </div>
 
+    <!-- Informações de limite de negócios -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-1"></i>
+                <strong>Seu plano atual permite até {{ max_businesses }} negócios.</strong>
+                Você já cadastrou {{ current_businesses }} negócios.
+                <span class="badge bg-primary">{{ max_businesses|add:"-current_businesses" }} vagas restantes</span>
+                {% if current_businesses < max_businesses %}
+                <a href="{% url 'local_businesses:register_business' %}" class="btn btn-sm btn-success ms-2">
+                    <i class="fas fa-plus-circle me-1"></i>Cadastrar Novo Negócio
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de negócios do usuário -->
+    {% if businesses.count > 1 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Meus Negócios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for user_business in businesses %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card {% if user_business.id == business.id %}border-primary border-3{% endif %}">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ user_business.name }}</h6>
+                                    <p class="card-text">{{ user_business.category.name }}</p>
+                                    {% if user_business.id == business.id %}
+                                    <span class="badge bg-primary">Negócio Atual</span>
+                                    {% else %}
+                                    <a href="?business_id={{ user_business.id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-exchange-alt me-1"></i>Gerenciar
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Business Info Card -->
     <div class="row">
-        <!-- Business Info Card -->
         <div class="col-lg-4 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-header bg-primary text-white">
@@ -131,7 +182,7 @@
                             {{ avg_rating|floatformat:1 }} 
                             <i class="fas fa-star text-warning"></i>
                             <br>
-                            <strong>Total:</strong> {{ business.reviews.count }} avaliações
+                            <strong>Total:</strong> {{ total_reviews }} avaliações
                         </p>
                     {% else %}
                         <p class="text-muted">Nenhuma avaliação ainda.</p>
@@ -177,6 +228,33 @@
         </div>
     </div>
 
+    <!-- Solicitações de Upgrade Pendentes -->
+    {% if pending_upgrades %}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Solicitações de Upgrade Pendentes</h5>
+                </div>
+                <div class="card-body">
+                    <p>Você tem solicitações de upgrade de plano aguardando aprovação:</p>
+                    <div class="list-group">
+                        {% for upgrade in pending_upgrades %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Solicitação para plano {{ upgrade.get_requested_plan_display }}</h6>
+                                    <small class="text-muted">Enviada em {{ upgrade.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <span class="badge bg-warning">Aguardando Aprovação</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row">
         <!-- Preview Card -->
         <div class="col-lg-6 mb-4">
@@ -204,11 +282,11 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-6">
-                            <h5>{{ business.reviews.count }}</h5>
+                            <h5>{{ total_reviews }}</h5>
                             <p class="mb-0">Avaliações</p>
                         </div>
                         <div class="col-6">
-                            <h5>{{ business.bookings.count }}</h5>
+                            <h5>{{ total_bookings }}</h5>
                             <p class="mb-0">Reservas</p>
                         </div>
                     </div>

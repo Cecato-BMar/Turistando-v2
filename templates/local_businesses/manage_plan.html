@@ -23,6 +23,11 @@
                     <h3 class="mb-0"><i class="fas fa-crown me-2"></i>Gerenciar Plano</h3>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>Informação sobre Planos</h5>
+                        <p>O plano Gratuito é gratuito para sempre. Os planos Pro e Premium são pagos e oferecem recursos adicionais para destacar seu negócio.</p>
+                    </div>
+                    
                     <div class="row">
                         <div class="col-md-4 mb-4">
                             <div class="card h-100 border-{% if business_plan.plan_type == 'free' %}secondary{% elif business_plan.plan_type == 'pro' %}info{% else %}warning{% endif %}">

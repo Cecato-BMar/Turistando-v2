@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Avg
-from .models import Business, BusinessCategory, BusinessPhoto, BusinessHours, Review, BusinessPlan, Booking, TimeSlot, Notification
+from django.contrib.auth.models import User
+from .models import Business, BusinessCategory, BusinessPhoto, BusinessHours, Review, BusinessPlan, Booking, TimeSlot, Notification, PlanUpgradeRequest
 from accounts.models import Profile
 from billing.models import Plan
 from .forms import BusinessRegistrationForm, BusinessEditForm, PhotoForm, BusinessHoursForm, ReviewForm, BookingForm
@@ -91,10 +92,26 @@ def register_business(request):
     """Registro de novo comércio/serviço"""
     profile = get_object_or_404(Profile, user=request.user)
     
-    # Verificar se o usuário já tem um negócio registrado
-    if hasattr(request.user, 'business'):
-        messages.info(request, 'Você já possui um negócio registrado.')
-        return redirect('local_businesses:business_dashboard')
+    # Verificar limite de negócios baseado no plano do usuário
+    user_businesses = request.user.businesses.all()
+    
+    # Definir limites por plano (valores padrão)
+    max_businesses = 1  # Free plan
+    
+    # Verificar se o usuário tem algum negócio com plano Pro ou Premium
+    user_plans = BusinessPlan.objects.filter(business__user=request.user)
+    if user_plans.filter(plan_type='premium').exists():
+        max_businesses = 10
+    elif user_plans.filter(plan_type='pro').exists():
+        max_businesses = 3
+    elif user_plans.filter(plan_type='free').exists():
+        max_businesses = 1
+    
+    # Verificar se o usuário atingiu o limite de negócios
+    if user_businesses.count() >= max_businesses:
+        messages.error(request, f'Você atingiu o limite de {max_businesses} negócios para seu plano atual. '
+                                f'Faça um upgrade para cadastrar mais negócios.')
+        return redirect('local_businesses:business_list')
     
     if request.method == 'POST':
         form = BusinessRegistrationForm(request.POST, request.FILES)
@@ -107,7 +124,8 @@ def register_business(request):
             BusinessPlan.objects.create(
                 business=business,
                 plan_type='free',
-                max_photos=1
+                max_photos=1,
+                max_businesses=1
             )
             
             messages.success(request, 'Negócio registrado com sucesso!')
@@ -117,13 +135,30 @@ def register_business(request):
     
     context = {
         'form': form,
+        'max_businesses': max_businesses,
+        'current_businesses': user_businesses.count(),
     }
     return render(request, 'local_businesses/register.html', context)
 
 @login_required
 def business_dashboard(request):
     """Painel do comércio/serviço"""
-    business = get_object_or_404(Business, user=request.user)
+    # Obter todos os negócios do usuário
+    user_businesses = request.user.businesses.all()
+    
+    # Se o usuário não tem negócios, redirecionar para registro
+    if not user_businesses.exists():
+        messages.info(request, 'Você ainda não possui nenhum negócio cadastrado.')
+        return redirect('local_businesses:register_business')
+    
+    # Verificar se foi selecionado um negócio específico
+    business_id = request.GET.get('business_id')
+    if business_id:
+        business = get_object_or_404(Business, id=business_id, user=request.user)
+    else:
+        # Para manter compatibilidade, usar o primeiro negócio como principal
+        business = user_businesses.first()
+    
     business_plan = getattr(business, 'businessplan', None)
     
     # Contar fotos atuais
@@ -142,14 +177,39 @@ def business_dashboard(request):
     # Contar notificações não lidas
     unread_notifications_count = business.notifications.filter(is_read=False).count()
     
+    # Contar avaliações e reservas totais
+    total_reviews = business.reviews.count()
+    total_bookings = business.bookings.count()
+    
+    # Obter solicitações de upgrade pendentes
+    pending_upgrades = PlanUpgradeRequest.objects.filter(business=business, status='pending')
+    
+    # Definir limites por plano (valores padrão)
+    max_businesses = 1  # Free plan
+    
+    # Verificar se o usuário tem algum negócio com plano Pro ou Premium
+    user_plans = BusinessPlan.objects.filter(business__user=request.user)
+    if user_plans.filter(plan_type='premium').exists():
+        max_businesses = 10
+    elif user_plans.filter(plan_type='pro').exists():
+        max_businesses = 3
+    elif user_plans.filter(plan_type='free').exists():
+        max_businesses = 1
+    
     context = {
         'business': business,
+        'businesses': user_businesses,
         'business_plan': business_plan,
         'photo_count': photo_count,
         'recent_bookings': recent_bookings,
         'avg_rating': avg_rating,
         'pending_bookings_count': pending_bookings_count,
         'unread_notifications_count': unread_notifications_count,
+        'total_reviews': total_reviews,
+        'total_bookings': total_bookings,
+        'pending_upgrades': pending_upgrades,
+        'max_businesses': max_businesses,
+        'current_businesses': user_businesses.count(),
     }
     return render(request, 'local_businesses/dashboard.html', context)
 
@@ -286,7 +346,14 @@ def manage_hours(request):
 @login_required
 def manage_plan(request):
     """Gerenciar plano do comércio/serviço"""
-    business = get_object_or_404(Business, user=request.user)
+    # Verificar se foi selecionado um negócio específico
+    business_id = request.GET.get('business_id')
+    if business_id:
+        business = get_object_or_404(Business, id=business_id, user=request.user)
+    else:
+        # Usar o primeiro negócio do usuário
+        business = get_object_or_404(Business, user=request.user)
+    
     business_plan, created = BusinessPlan.objects.get_or_create(business=business)
     
     # Obter planos disponíveis do sistema de billing
@@ -295,39 +362,125 @@ def manage_plan(request):
     if request.method == 'POST':
         plan_type = request.POST.get('plan_type')
         if plan_type in ['free', 'pro', 'premium']:
-            # Atualizar plano
-            business_plan.plan_type = plan_type
-            
-            # Definir limites com base no plano
-            if plan_type == 'free':
-                business_plan.max_photos = 1
-                business_plan.can_show_menu = False
-                business_plan.can_show_website = False
-                business_plan.can_show_whatsapp = False
-                business_plan.is_featured = False
-            elif plan_type == 'pro':
-                business_plan.max_photos = 5
-                business_plan.can_show_menu = False
-                business_plan.can_show_website = True
-                business_plan.can_show_whatsapp = True
-                business_plan.is_featured = False
-            elif plan_type == 'premium':
-                business_plan.max_photos = 10  # ou ilimitado
-                business_plan.can_show_menu = True
-                business_plan.can_show_website = True
-                business_plan.can_show_whatsapp = True
-                business_plan.is_featured = True
+            # Verificar se o plano selecionado é pago
+            if plan_type in ['pro', 'premium']:
+                # Redirecionar para a página de checkout
+                request.session['selected_plan_type'] = plan_type
+                request.session['selected_business_id'] = business.id
+                return redirect('local_businesses:checkout')
+            else:
+                # Atualizar plano gratuito diretamente
+                business_plan.plan_type = plan_type
                 
-            business_plan.save()
-            messages.success(request, f'Plano atualizado para {business_plan.get_plan_type_display()}!')
-            return redirect('local_businesses:manage_plan')
+                # Definir limites com base no plano
+                if plan_type == 'free':
+                    business_plan.max_photos = 1
+                    business_plan.max_businesses = 1
+                    business_plan.can_show_menu = False
+                    business_plan.can_show_website = False
+                    business_plan.can_show_whatsapp = False
+                    business_plan.is_featured = False
+                elif plan_type == 'pro':
+                    business_plan.max_photos = 5
+                    business_plan.max_businesses = 3
+                    business_plan.can_show_menu = False
+                    business_plan.can_show_website = True
+                    business_plan.can_show_whatsapp = True
+                    business_plan.is_featured = False
+                elif plan_type == 'premium':
+                    business_plan.max_photos = 10  # ou ilimitado
+                    business_plan.max_businesses = 10
+                    business_plan.can_show_menu = True
+                    business_plan.can_show_website = True
+                    business_plan.can_show_whatsapp = True
+                    business_plan.is_featured = True
+                    
+                business_plan.save()
+                messages.success(request, f'Plano atualizado para {business_plan.get_plan_type_display()}!')
+                return redirect('local_businesses:manage_plan')
+    
+    # Obter todos os negócios do usuário para o seletor
+    user_businesses = request.user.businesses.all()
     
     context = {
         'business': business,
+        'businesses': user_businesses,
         'business_plan': business_plan,
         'available_plans': available_plans,
     }
     return render(request, 'local_businesses/manage_plan.html', context)
+
+@login_required
+def checkout(request):
+    """Página de checkout para planos pagos"""
+    # Verificar se há um negócio selecionado na sessão
+    selected_business_id = request.session.get('selected_business_id')
+    if selected_business_id:
+        business = get_object_or_404(Business, id=selected_business_id, user=request.user)
+    else:
+        business = get_object_or_404(Business, user=request.user)
+    
+    # Verificar se há um plano selecionado na sessão
+    selected_plan_type = request.session.get('selected_plan_type')
+    if not selected_plan_type or selected_plan_type not in ['pro', 'premium']:
+        messages.error(request, 'Nenhum plano selecionado.')
+        return redirect('local_businesses:manage_plan')
+    
+    # Obter o plano correspondente do sistema de billing
+    # Mapear planos locais para planos de billing
+    plan_mapping = {
+        'pro': 'Profissional',
+        'premium': 'Empresarial'
+    }
+    
+    try:
+        billing_plan = Plan.objects.get(name=plan_mapping[selected_plan_type])
+    except Plan.DoesNotExist:
+        messages.error(request, 'Plano não encontrado.')
+        return redirect('local_businesses:manage_plan')
+    
+    if request.method == 'POST':
+        # Processar pagamento (simulação)
+        # Aqui você integraria com um gateway de pagamento real
+        payment_method = request.POST.get('payment_method')
+        card_number = request.POST.get('card_number')
+        
+        # Simular processamento de pagamento
+        if payment_method and card_number:
+            # Criar uma solicitação de upgrade de plano em vez de aplicar diretamente
+            upgrade_request = PlanUpgradeRequest.objects.create(
+                business=business,
+                requested_plan=selected_plan_type,
+                billing_plan=billing_plan,
+                payment_method=payment_method,
+                payment_details=f"Cartão terminado em {card_number[-4:]}" if card_number else ""
+            )
+            
+            # Criar notificação para o negócio
+            Notification.objects.create(
+                business=business,
+                notification_type='plan_upgrade',
+                title='Solicitação de Upgrade de Plano',
+                message=f'Sua solicitação para o plano {upgrade_request.get_requested_plan_display()} foi recebida e está aguardando aprovação.'
+            )
+            
+            # Limpar a sessão
+            if 'selected_plan_type' in request.session:
+                del request.session['selected_plan_type']
+            if 'selected_business_id' in request.session:
+                del request.session['selected_business_id']
+            
+            messages.info(request, f'Sua solicitação para o plano {upgrade_request.get_requested_plan_display()} foi recebida e está aguardando aprovação.')
+            return redirect('local_businesses:business_dashboard')
+        else:
+            messages.error(request, 'Por favor, preencha todos os campos de pagamento.')
+    
+    context = {
+        'business': business,
+        'selected_plan_type': selected_plan_type,
+        'billing_plan': billing_plan,
+    }
+    return render(request, 'local_businesses/checkout.html', context)
 
 @login_required
 def add_review(request, business_id):
@@ -510,28 +663,8 @@ def manage_notifications(request):
     business = get_object_or_404(Business, user=request.user)
     notifications = business.notifications.all()
     
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        
-        if action == 'mark_as_read':
-            # Marcar notificação como lida
-            notification_id = request.POST.get('notification_id')
-            notification = get_object_or_404(Notification, id=notification_id, business=business)
-            notification.is_read = True
-            notification.save()
-            messages.success(request, 'Notificação marcada como lida!')
-        elif action == 'mark_all_as_read':
-            # Marcar todas as notificações como lidas
-            notifications.filter(is_read=False).update(is_read=True)
-            messages.success(request, 'Todas as notificações foram marcadas como lidas!')
-        elif action == 'delete':
-            # Excluir notificação
-            notification_id = request.POST.get('notification_id')
-            notification = get_object_or_404(Notification, id=notification_id, business=business)
-            notification.delete()
-            messages.success(request, 'Notificação excluída com sucesso!')
-        
-        return redirect('local_businesses:manage_notifications')
+    # Marcar todas as notificações como lidas
+    business.notifications.filter(is_read=False).update(is_read=True)
     
     context = {
         'business': business,
@@ -539,20 +672,165 @@ def manage_notifications(request):
     }
     return render(request, 'local_businesses/manage_notifications.html', context)
 
+@login_required
 def get_available_times(request, business_id, date_str):
-    """Obter horários disponíveis para reserva"""
+    """API para obter horários disponíveis para reserva"""
     business = get_object_or_404(Business, id=business_id)
     
     # Esta é uma implementação simplificada
-    # Em uma aplicação real, você precisaria verificar:
-    # 1. Horário de funcionamento do negócio naquele dia
-    # 2. Reservas já existentes naquele dia
-    # 3. Duração média dos serviços
+    # Em uma aplicação real, você precisaria verificar os horários já reservados
+    available_times = []
+    time_slots = business.time_slots.filter(is_active=True)
     
-    # Por enquanto, vamos retornar horários fixos
-    available_times = [
-        '09:00', '10:00', '11:00', '12:00',
-        '14:00', '15:00', '16:00', '17:00'
-    ]
+    for slot in time_slots:
+        # Adicionar horários disponíveis (simplificado)
+        available_times.append({
+            'start_time': slot.start_time.strftime('%H:%M'),
+            'end_time': slot.end_time.strftime('%H:%M'),
+        })
     
     return JsonResponse({'available_times': available_times})
+
+# Import necessário para o formulário TimeSlotForm
+from .forms import TimeSlotForm
+
+@login_required
+def admin_dashboard(request):
+    """Painel administrativo para controle total do sistema"""
+    # Verificar se o usuário é superusuário
+    if not request.user.is_superuser:
+        messages.error(request, 'Acesso negado. Apenas administradores podem acessar esta página.')
+        return redirect('home')
+    
+    # Obter estatísticas do sistema
+    total_businesses = Business.objects.count()
+    total_users = User.objects.count()
+    total_reviews = Review.objects.count()
+    total_bookings = Booking.objects.count()
+    
+    # Obter solicitações de upgrade pendentes
+    pending_upgrades = PlanUpgradeRequest.objects.filter(status='pending').select_related('business', 'billing_plan')
+    
+    # Obter últimos negócios registrados
+    latest_businesses = Business.objects.order_by('-created_at')[:5]
+    
+    # Obter últimos usuários registrados
+    latest_users = User.objects.order_by('-date_joined')[:5]
+    
+    # Obter todos os usuários com seus negócios e planos
+    # Agora um usuário pode ter múltiplos negócios, então precisamos ajustar a lógica
+    users_with_plans = User.objects.prefetch_related('businesses__businessplan').order_by('username')
+    
+    context = {
+        'total_businesses': total_businesses,
+        'total_users': total_users,
+        'total_reviews': total_reviews,
+        'total_bookings': total_bookings,
+        'pending_upgrades': pending_upgrades,
+        'latest_businesses': latest_businesses,
+        'latest_users': latest_users,
+        'users_with_plans': users_with_plans,
+    }
+    return render(request, 'local_businesses/admin_dashboard.html', context)
+
+@login_required
+def approve_upgrade(request, upgrade_id):
+    """Aprovar uma solicitação de upgrade de plano"""
+    # Verificar se o usuário é superusuário
+    if not request.user.is_superuser:
+        messages.error(request, 'Acesso negado.')
+        return redirect('home')
+    
+    # Obter a solicitação de upgrade
+    upgrade_request = get_object_or_404(PlanUpgradeRequest, id=upgrade_id, status='pending')
+    
+    if request.method == 'POST':
+        # Aprovar o upgrade
+        upgrade_request.status = 'approved'
+        upgrade_request.approved_by = request.user
+        upgrade_request.approved_at = timezone.now()
+        upgrade_request.save()
+        
+        # Atualizar o plano do negócio
+        business_plan, created = BusinessPlan.objects.get_or_create(business=upgrade_request.business)
+        business_plan.plan_type = upgrade_request.requested_plan
+        
+        # Definir limites com base no plano
+        if upgrade_request.requested_plan == 'free':
+            business_plan.max_photos = 1
+            business_plan.max_businesses = 1
+            business_plan.can_show_menu = False
+            business_plan.can_show_website = False
+            business_plan.can_show_whatsapp = False
+            business_plan.is_featured = False
+        elif upgrade_request.requested_plan == 'pro':
+            business_plan.max_photos = 5
+            business_plan.max_businesses = 3
+            business_plan.can_show_menu = False
+            business_plan.can_show_website = True
+            business_plan.can_show_whatsapp = True
+            business_plan.is_featured = False
+        elif upgrade_request.requested_plan == 'premium':
+            business_plan.max_photos = 10  # ou ilimitado
+            business_plan.max_businesses = 10
+            business_plan.can_show_menu = True
+            business_plan.can_show_website = True
+            business_plan.can_show_whatsapp = True
+            business_plan.is_featured = True
+            
+        business_plan.save()
+        
+        # Criar notificação para o negócio
+        Notification.objects.create(
+            business=upgrade_request.business,
+            notification_type='plan_upgrade_approved',
+            title='Upgrade de Plano Aprovado',
+            message=f'Seu upgrade para o plano {upgrade_request.get_requested_plan_display()} foi aprovado com sucesso!'
+        )
+        
+        messages.success(request, f'Upgrade para o plano {upgrade_request.get_requested_plan_display()} aprovado com sucesso!')
+        return redirect('local_businesses:admin_dashboard')
+    
+    context = {
+        'upgrade_request': upgrade_request,
+    }
+    return render(request, 'local_businesses/approve_upgrade.html', context)
+
+@login_required
+def reject_upgrade(request, upgrade_id):
+    """Rejeitar uma solicitação de upgrade de plano"""
+    # Verificar se o usuário é superusuário
+    if not request.user.is_superuser:
+        messages.error(request, 'Acesso negado.')
+        return redirect('home')
+    
+    # Obter a solicitação de upgrade
+    upgrade_request = get_object_or_404(PlanUpgradeRequest, id=upgrade_id, status='pending')
+    
+    if request.method == 'POST':
+        rejection_reason = request.POST.get('rejection_reason', '')
+        
+        # Rejeitar o upgrade
+        upgrade_request.status = 'rejected'
+        upgrade_request.approved_by = request.user
+        upgrade_request.approved_at = timezone.now()
+        upgrade_request.save()
+        
+        # Criar notificação para o negócio
+        Notification.objects.create(
+            business=upgrade_request.business,
+            notification_type='plan_upgrade_rejected',
+            title='Upgrade de Plano Rejeitado',
+            message=f'Seu upgrade para o plano {upgrade_request.get_requested_plan_display()} foi rejeitado. Motivo: {rejection_reason}'
+        )
+        
+        messages.success(request, f'Upgrade para o plano {upgrade_request.get_requested_plan_display()} rejeitado.')
+        return redirect('local_businesses:admin_dashboard')
+    
+    context = {
+        'upgrade_request': upgrade_request,
+    }
+    return render(request, 'local_businesses/reject_upgrade.html', context)
+
+# Import necessário para timezone
+from django.utils import timezone

@@ -20,7 +20,7 @@ class Business(models.Model):
         ('service', 'Serviço'),
     ]
     
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='businesses')
     name = models.CharField(max_length=200)
     description = models.TextField()
     business_type = models.CharField(max_length=20, choices=BUSINESS_TYPES)
@@ -88,6 +88,7 @@ class BusinessPlan(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)
     plan_type = models.CharField(max_length=20, choices=PLAN_TYPES, default='free')
     max_photos = models.IntegerField(default=1)  # 1 para free, 5 para pro, ilimitado para premium
+    max_businesses = models.IntegerField(default=1)  # 1 para free, 3 para pro, 10 para premium
     can_show_menu = models.BooleanField(default=False)  # Premium
     can_show_website = models.BooleanField(default=False)  # Pro e Premium
     can_show_whatsapp = models.BooleanField(default=False)  # Pro e Premium
@@ -97,6 +98,36 @@ class BusinessPlan(models.Model):
     
     def __str__(self):
         return f"{self.business.name} - {self.get_plan_type_display()}"
+
+# New model for plan upgrade requests that need approval
+class PlanUpgradeRequest(models.Model):
+    PLAN_TYPES = [
+        ('pro', 'Pro'),
+        ('premium', 'Premium'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendente'),
+        ('approved', 'Aprovado'),
+        ('rejected', 'Rejeitado'),
+    ]
+    
+    business = models.ForeignKey(Business, on_delete=models.CASCADE)
+    requested_plan = models.CharField(max_length=20, choices=PLAN_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    billing_plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    payment_method = models.CharField(max_length=50, blank=True)
+    payment_details = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_upgrades')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.business.name} - {self.get_requested_plan_display()} - {self.get_status_display()}"
+    
+    class Meta:
+        ordering = ['-created_at']
 
 # New model for bookings/reservations
 class Booking(models.Model):
@@ -149,12 +180,15 @@ class Notification(models.Model):
         ('booking', 'Nova Reserva'),
         ('booking_update', 'Atualização de Reserva'),
         ('review', 'Nova Avaliação'),
+        ('plan_upgrade', 'Solicitação de Upgrade de Plano'),
+        ('plan_upgrade_approved', 'Upgrade de Plano Aprovado'),
+        ('plan_upgrade_rejected', 'Upgrade de Plano Rejeitado'),
         ('general', 'Geral'),
     ]
     
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='notifications')
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  # User who triggered the notification
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES)
     title = models.CharField(max_length=200)
     message = models.TextField()
     is_read = models.BooleanField(default=False)

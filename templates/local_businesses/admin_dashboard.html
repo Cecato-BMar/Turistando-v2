@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel Administrativo - Manus AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-cogs me-2"></i>Painel Administrativo</h1>
+            <p class="lead">Controle total do sistema, usuários e pagamentos</p>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Negócios</h5>
+                            <h2>{{ total_businesses }}</h2>
+                        </div>
+                        <i class="fas fa-store fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Usuários</h5>
+                            <h2>{{ total_users }}</h2>
+                        </div>
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Avaliações</h5>
+                            <h2>{{ total_reviews }}</h2>
+                        </div>
+                        <i class="fas fa-star fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Reservas</h5>
+                            <h2>{{ total_bookings }}</h2>
+                        </div>
+                        <i class="fas fa-calendar-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Solicitações de Upgrade Pendentes -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Solicitações de Upgrade Pendentes</h4>
+                </div>
+                <div class="card-body">
+                    {% if pending_upgrades %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Negócio</th>
+                                        <th>Plano Solicitado</th>
+                                        <th>Valor</th>
+                                        <th>Data da Solicitação</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for upgrade in pending_upgrades %}
+                                        <tr>
+                                            <td>{{ upgrade.business.name }}</td>
+                                            <td>{{ upgrade.get_requested_plan_display }}</td>
+                                            <td>R$ {{ upgrade.billing_plan.price|floatformat:2 }}</td>
+                                            <td>{{ upgrade.created_at|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                <a href="{% url 'local_businesses:approve_upgrade' upgrade.id %}" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-check me-1"></i>Aprovar
+                                                </a>
+                                                <a href="{% url 'local_businesses:reject_upgrade' upgrade.id %}" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-times me-1"></i>Rejeitar
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h5>Nenhuma solicitação de upgrade pendente</h5>
+                            <p class="text-muted">Todas as solicitações foram processadas.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usuários e seus Planos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0"><i class="fas fa-users me-2"></i>Usuários e seus Planos</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>E-mail</th>
+                                    <th>Negócio(s)</th>
+                                    <th>Plano(s)</th>
+                                    <th>Data de Registro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users_with_plans %}
+                                    <tr>
+                                        <td>{{ user.get_full_name|default:user.username }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            {% if user.businesses.all %}
+                                                {% for business in user.businesses.all %}
+                                                    <div>{{ business.name }}</div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted">Nenhum negócio</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if user.businesses.all %}
+                                                {% for business in user.businesses.all %}
+                                                    {% if business.businessplan %}
+                                                        {% if business.businessplan.plan_type == 'free' %}
+                                                            <span class="badge bg-secondary">Gratuito</span>
+                                                        {% elif business.businessplan.plan_type == 'pro' %}
+                                                            <span class="badge bg-info">Pro</span>
+                                                        {% elif business.businessplan.plan_type == 'premium' %}
+                                                            <span class="badge bg-warning">Premium</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge bg-light text-dark">Sem plano</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">Sem negócio</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.date_joined|date:"d/m/Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimos Negócios Registrados -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0"><i class="fas fa-store me-2"></i>Últimos Negócios Registrados</h4>
+                </div>
+                <div class="card-body">
+                    {% if latest_businesses %}
+                        <div class="list-group">
+                            {% for business in latest_businesses %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ business.name }}</h6>
+                                            <small class="text-muted">{{ business.get_business_type_display }} - {{ business.category.name }}</small>
+                                        </div>
+                                        <small>{{ business.created_at|date:"d/m/Y" }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nenhum negócio registrado ainda.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimos Usuários Registrados -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0"><i class="fas fa-users me-2"></i>Últimos Usuários Registrados</h4>
+                </div>
+                <div class="card-body">
+                    {% if latest_users %}
+                        <div class="list-group">
+                            {% for user in latest_users %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ user.get_full_name|default:user.username }}</h6>
+                                            <small class="text-muted">{{ user.email }}</small>
+                                        </div>
+                                        <small>{{ user.date_joined|date:"d/m/Y" }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nenhum usuário registrado ainda.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Rejeitar Upgrade - Manus AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Início</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'local_businesses:admin_dashboard' %}">Painel Administrativo</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Rejeitar Upgrade</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0"><i class="fas fa-times-circle me-2"></i>Rejeitar Solicitação de Upgrade</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Detalhes da Solicitação</h4>
+                            <table class="table">
+                                <tr>
+                                    <th>Negócio:</th>
+                                    <td>{{ upgrade_request.business.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Plano Solicitado:</th>
+                                    <td>{{ upgrade_request.get_requested_plan_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Valor:</th>
+                                    <td>R$ {{ upgrade_request.billing_plan.price|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Método de Pagamento:</th>
+                                    <td>{{ upgrade_request.payment_method }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Detalhes do Pagamento:</th>
+                                    <td>{{ upgrade_request.payment_details }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Data da Solicitação:</th>
+                                    <td>{{ upgrade_request.created_at|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h4>Informações do Negócio</h4>
+                            <table class="table">
+                                <tr>
+                                    <th>Proprietário:</th>
+                                    <td>{{ upgrade_request.business.user.get_full_name|default:upgrade_request.business.user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>E-mail:</th>
+                                    <td>{{ upgrade_request.business.user.email }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tipo:</th>
+                                    <td>{{ upgrade_request.business.get_business_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Categoria:</th>
+                                    <td>{{ upgrade_request.business.category.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Plano Atual:</th>
+                                    <td>{{ upgrade_request.business.businessplan.get_plan_type_display }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle me-2"></i>Confirmação Necessária</h5>
+                        <p>Você está prestes a rejeitar a solicitação de upgrade para o plano <strong>{{ upgrade_request.get_requested_plan_display }}</strong>. O negócio será notificado sobre a rejeição.</p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="rejection_reason" class="form-label">Motivo da Rejeição</label>
+                            <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" placeholder="Informe o motivo da rejeição..." required></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'local_businesses:admin_dashboard' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-times-circle me-1"></i>Rejeitar Upgrade
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -11,6 +11,16 @@
                     <h3 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Cadastrar Novo Negócio</h3>
                 </div>
                 <div class="card-body">
+                    <!-- Informações de limite de negócios -->
+                    {% if max_businesses %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Seu plano atual permite até {{ max_businesses }} negócios.</strong>
+                        Você já cadastrou {{ current_businesses }} negócios.
+                        <span class="badge bg-primary">{{ max_businesses|add:"-current_businesses" }} vagas restantes</span>
+                    </div>
+                    {% endif %}
+                    
                     <form method="post">
                         {% csrf_token %}
                         
