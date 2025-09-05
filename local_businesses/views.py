@@ -132,11 +132,24 @@ def business_dashboard(request):
     # Obter reservas recentes
     recent_bookings = business.bookings.filter(status='pending')[:5]
     
+    # Calcular média de avaliações
+    from django.db.models import Avg
+    avg_rating = business.reviews.aggregate(Avg('rating'))['rating__avg']
+    
+    # Contar reservas pendentes
+    pending_bookings_count = business.bookings.filter(status='pending').count()
+    
+    # Contar notificações não lidas
+    unread_notifications_count = business.notifications.filter(is_read=False).count()
+    
     context = {
         'business': business,
         'business_plan': business_plan,
         'photo_count': photo_count,
         'recent_bookings': recent_bookings,
+        'avg_rating': avg_rating,
+        'pending_bookings_count': pending_bookings_count,
+        'unread_notifications_count': unread_notifications_count,
     }
     return render(request, 'local_businesses/dashboard.html', context)
 

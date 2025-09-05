@@ -128,10 +128,8 @@
                     {% if business.reviews.count > 0 %}
                         <p>
                             <strong>Média:</strong> 
-                            {% with business.reviews.aggregate(avg='rating__avg').avg as avg_rating %}
-                                {{ avg_rating|floatformat:1 }} 
-                                <i class="fas fa-star text-warning"></i>
-                            {% endwith %}
+                            {{ avg_rating|floatformat:1 }} 
+                            <i class="fas fa-star text-warning"></i>
                             <br>
                             <strong>Total:</strong> {{ business.reviews.count }} avaliações
                         </p>
@@ -156,7 +154,7 @@
                 <div class="card-body">
                     <p>Gerencie as reservas de seus clientes.</p>
                     {% if recent_bookings %}
-                        <p class="text-success"><i class="fas fa-bell me-1"></i>{{ business.bookings.filter(status='pending').count }} reservas pendentes</p>
+                        <p class="text-success"><i class="fas fa-bell me-1"></i>{{ pending_bookings_count }} reservas pendentes</p>
                     {% else %}
                         <p class="text-muted">Nenhuma reserva recente.</p>
                     {% endif %}
@@ -170,8 +168,8 @@
                     </a>
                     <a href="{% url 'local_businesses:manage_notifications' %}" class="btn btn-outline-secondary w-100">
                         <i class="fas fa-bell me-1"></i>Notificações
-                        {% if business.notifications.filter(is_read=False).count > 0 %}
-                            <span class="badge bg-danger ms-1">{{ business.notifications.filter(is_read=False).count }}</span>
+                        {% if unread_notifications_count > 0 %}
+                            <span class="badge bg-danger ms-1">{{ unread_notifications_count }}</span>
                         {% endif %}
                     </a>
                 </div>
